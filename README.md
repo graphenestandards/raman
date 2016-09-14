@@ -19,10 +19,10 @@ Almost all required packages, including [jupyter](jupyter.org), are part of the 
 
 
 ##Usage
-The jupyter notebook can be used to fit local data. The version number of the repository gives the version of the used evaluation standard after the following convention:
+The jupyter notebook can be used to fit local graphene Raman data. The version number of the repository gives the version of the used evaluation standard after the following convention:
 
 vX.Y means:
-* standard version X
+* evaluation standard version X
 * with technical update Y, which did not affect the results of the evaluation
 
 This means evalutation numbers v1.3 and v1.4 would still be comparable but v1.3 and v2.0 not.
