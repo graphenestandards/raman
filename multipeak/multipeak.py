@@ -429,6 +429,8 @@ class MultiPseudoVoigtModel:
         #override default in lmfit model
         self.parameters[prefix + 'fraction'].set(
             peak.get('fraction', {}).get('init'),
+            max=peak.get('fraction', {}).get('max'),
+            min=peak.get('fraction', {}).get('min'),
             vary=True,
             expr=None
         )
