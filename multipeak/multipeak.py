@@ -1,8 +1,15 @@
 from . import *
     
-    
-class Dataset:
+class Dataset: 
     def __init__(self, task=None, maxNumber=None):
+        """A multi-peak, multi-spectra dataset, loaded from a text file.
+        Args:
+            task (dict): Task object
+            maxNumber (int): maximum number of datasets to be fitted.
+                If the text file contains mor data, the rest will be omitted.
+ 
+        """
+        
         self.weights = {}
         self.task = task
         
@@ -396,6 +403,7 @@ class MultiPseudoVoigtModel:
         self.weights = weights
         
         self.fitResults = np.zeros_like(self.datasetX[:,0], dtype=object)
+        self.avgFitResult = None
         self.parameters = Parameters()
         if len(self.datasetX) > 0:
             self.makeModel()
@@ -510,12 +518,12 @@ class MultiPseudoVoigtModel:
         
         
 class FitResultParameter:
-    def __init__(self, fitResults, paramName=None):
+    def __init__(self, fitResults, paramName=None, description=None):
         self._values = fitResults
         self.paramName = paramName
-        #self.maskedValues = self.values
         self._avg = 0
         self._dev = 0
+        self._description = ''
         self.outliersMin = np.ones_like(fitResults, dtype=int)
         self.outliersMax = np.ones_like(fitResults, dtype=int)
         self.calcAvg()
@@ -532,6 +540,12 @@ class FitResultParameter:
     def values(self, values):
         self._values = values
         self.calcAvg()
+    @property
+    def description(self):
+        return self._description
+    @description.setter
+    def description(self, description):
+        self._description = description
     def setValue(self, index, value):
         self._values[index] = value
     def calcAvg(self):
@@ -578,7 +592,7 @@ class MultiPeakFitResults:
         return self.peakResults[self.peakParamNames[peakParamName]]
     
     def getHTML(self):
-        return ('<div>Results from ' + str(len(self.fitResults)) + ' datasets:' +
+        return ('<div>Results per peak from ' + str(len(self.fitResults)) + ' datasets:</div>' +
             '<table><tr>{}</tr></table>'.format(
             '<tr><td></td>' + (
                 '<td>{}</td>'.format(
@@ -591,7 +605,7 @@ class MultiPeakFitResults:
                 '</td>' +
                 '<td>{}</td>'.format(
                     '</td><td>'.join(
-                        col.getStr() for col in row)) for rowNo, row in enumerate(self.peakResults))
+                        col.getStr() for colNo, col in enumerate(row))) for rowNo, row in enumerate(self.peakResults))
             ))
 
         
@@ -614,6 +628,8 @@ class MultiPeakModelResults:
 
         self.peakResults = MultiPeakFitResults(
             self.fitResults, fittedModel.peakNames, fittedModel.paramNames)
+        
+        self.derivedResults = {}
 
     def calcRatio(self, param1, param2, min=None, max=None, outliers=None):
         
@@ -698,7 +714,7 @@ class MultiPeakModelResults:
         for peakName in self.peakResults.peakNames:
             self.plotPeakParamHist(peakName, 'fwhm', xunit='cm-1')
 
-    def writeResultTable(self, filenameAd):
+    def writePeakResultsTable(self, filenameAd):
         filename = self.baseFilename + '_' + filenameAd + '.csv'
         delimiter = ';'
         
@@ -720,7 +736,7 @@ class MultiPeakModelResults:
         
             print('Peak results saved as: ', filename)
 
-    def printResultTable(self):
+    def printPeakResultsTable(self):
         display(HTML(self.peakResults.getHTML()))
 
     def printParamResults(self, paramName):
@@ -728,5 +744,47 @@ class MultiPeakModelResults:
             print(peakName + ' ' + paramName + ': ' +
                 self.peakResults.getReferenceByName(
                     peakName + '_' + paramName).getStr())
+    
+    
+    def getDerivedResultsHTML(self, derivedParams=None):
+        
+        html = '<div>Derived results from ' + str(len(self.fitResults)) + ' datasets:</div>'
+        if derivedParams is None:
+            derivedParams = self.derivedResults
+  
+        html += '<table>'
+        for paramName in derivedParams:
+            param = self.derivedResults[paramName]
+            html += (
+                '<tr><td>' + param.description + '</td><td>' + param.getStr() + '</td><tr>'
+            )
+        html += '</table>'
+        
+        return html
+    
+    def printDerivedResultsTable(self, derivedParams=None):
+        display(HTML(self.getDerivedResultsHTML(derivedParams=derivedParams)))
+        
+    def plotAvgFit(self):
+        if self.datasetsNumber < 1:
+            return
+        
+        f, (ax1, ax2) = plt.subplots(1, 2, sharey=True)
+        
+        ax1.plot(self.x[0, :], self.avgFitResult.best_fit, 'r-')
+        ax1.plot(self.x[0, :], self.avgY, 'ko', markersize=2)
+        start, end = ax1.get_xlim()
+        ax1.xaxis.set_ticks(np.arange(start, end, 100.0))
+        
+        ax2.plot(self.x[0, :], self.avgFitResult.best_fit, 'r-')
+        ax2.plot(self.x[0, :], self.avgY, 'ko', markersize=2)
+        start, end = ax2.get_xlim()
+        ax2.xaxis.set_ticks(np.arange(start, end, 100.0))
+        
+        ax1.set_ylabel(self.task.get('ylabel'))
+        ax1.set_xlim([1250, 1650])
+        ax2.set_xlim([2550, 2820])
+        ax1.set_xlabel(self.task.get('xlabel'))
+        ax2.set_xlabel(self.task.get('xlabel'))
 
-            
+        plt.show()

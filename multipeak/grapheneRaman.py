@@ -14,13 +14,27 @@ class GrapheneModelResults(MultiPeakModelResults):
         self.areaG = self.peakResults.getReferenceByName('G_amplitude')
 
         self.DtoG_area = self.calcRatio('D_amplitude', 'G_amplitude', min=0.01, max=5.0, outliers=5)
+        self.DtoG_area.description = 'D/G area ratio'
         self.DtoG_height = self.calcRatio('D_height', 'G_height', min=0.01, max=5.0, outliers=5)
+        self.DtoG_height.description = 'D/G height ratio'
         self.twoDtoG_area = self.calcRatio('twoD_amplitude', 'G_amplitude', min=0.01, max=10.0, outliers=5)
+        self.twoDtoG_area.description = '2D/G area ratio'
         self.twoDtoG_height = self.calcRatio('twoD_height', 'G_height', min=0.01, max=10.0, outliers=5)
+        self.twoDtoG_height.description = '2D/G height ratio'
         
         self.twoDmaxRes = FitResultParameter(np.ones_like(self.x[:,0]))
+        self.twoDmaxRes.description = 'Normalized squared maximum 2D residual'
         self.twoDr2 = FitResultParameter(np.ones_like(self.x[:,0]))
-
+        self.twoDr2.description = 'Coefficient of determination of 2D single peak fitting'
+        
+        self.derivedResults['DtoG_area'] = self.DtoG_area
+        self.derivedResults['DtoG_height'] = self.DtoG_height
+        self.derivedResults['twoDtoG_area'] = self.twoDtoG_area
+        self.derivedResults['twoDtoG_height'] = self.twoDtoG_height
+        self.derivedResults['twoDmaxRes'] = self.twoDmaxRes
+        self.derivedResults['twoDr2'] = self.twoDr2
+        
+        self.get2Dresiduals()
             
     def writeOutput(self, filenameAd):
         if self.datasetsNumber < 1:
@@ -154,7 +168,7 @@ class GrapheneModelResults(MultiPeakModelResults):
     def printtwoDtoG(self):
         if self.fitResults[0].best_values.get('twoD_center') != None:
             print('2D/G ratio by area: ', self.twoDtoG_area.avg, ' +/- ', self.twoDtoG_area.dev)
-
+            print('2D/G ratio by height: ', self.twoDtoG_height.avg, ' +/- ', self.twoDtoG_height.dev)
     
     def histDtoGArea(self, save=None):
         
@@ -165,8 +179,8 @@ class GrapheneModelResults(MultiPeakModelResults):
         
         self.histFrom(
             self.DtoG_area.values,
-            'D/G',
-            bins=np.linspace(0, 2, 41),
+            'D/G by area',
+            bins=50,
             saveName=saveName
         )
     
@@ -175,7 +189,11 @@ class GrapheneModelResults(MultiPeakModelResults):
     
     def histtwoDtoGArea(self):
         if self.fitResults[0].best_values.get('twoD_center') != None:
-            self.histFrom(self.twoDtoG_area.values, '2D/G')
+            self.histFrom(
+                self.twoDtoG_area.values,
+                '2D/G by area',
+                bins=50
+            )
     
     def printPeakRatios(self, save=None):
         if self.datasetsNumber < 1:
@@ -263,7 +281,40 @@ class GrapheneModelResults(MultiPeakModelResults):
         
         plt.show()
         
+    def plot2Dresiduals(self, save=None):
+    
+        if self.datasetsNumber < 1:
+            return
+        if self.fitResults[0].params.get('twoD_center') is None:
+            return
         
+        #helper to get the running mean of a spectrum
+        def running_mean(ydata, width):
+            cumsum = np.cumsum(np.insert(ydata, 0, 0)) 
+            return (cumsum[width:] - cumsum[:-width]) / width
+        
+        ax = plt.figure('2Dresiduals').add_subplot(111)
+        ax.set_ylabel('Normalized squared residuals')
+        ax.set_xlabel('Number of evaluated 2D data points')
+        
+        for i, modResult in enumerate(self.fitResults):
+            
+            #we use the range for the 2D peak defined in self.task['peaks']
+            twoDresRange = self.weights['twoD'] == 1
+            
+            twoDres = self.fitResults[i].residual[twoDresRange,...]
+            
+            twoDres = twoDres**2 / (
+                self.fitResults[i].params['twoD_height'])**2
+            
+            ax.plot(running_mean(twoDres, 5))
+
+        plt.show()
+        
+        if not save is None and save == True:
+            plt.savefig(self.baseFilename + '_2DpeakResiduals' + '.png') 
+            
+    
     def get2Dresiduals(self, evalRange=None, plot=None):
         if self.datasetsNumber < 1:
             return
@@ -274,8 +325,6 @@ class GrapheneModelResults(MultiPeakModelResults):
         def running_mean(ydata, width):
             cumsum = np.cumsum(np.insert(ydata, 0, 0)) 
             return (cumsum[width:] - cumsum[:-width]) / width
-            
-        
         
         for i, modResult in enumerate(self.fitResults):
             
@@ -296,22 +345,17 @@ class GrapheneModelResults(MultiPeakModelResults):
                 self.fitResults[i].params['twoD_height'])**2
             
             self.twoDmaxRes.setValue(i, (max(twoDres)))
-            
-            if not plot is None and plot == True: 
-                plt.plot(running_mean(twoDres, 5))
         
         self.twoDr2.setMask(0.0, 1)
         self.twoDmaxRes.setOutliers(5)
         self.twoDr2.setOutliers(5)
         
-        if not plot is None and plot == True:
-            plt.ylabel('Normalized squared residuals')
-            plt.xlabel('Number of evaluated 2D data points')
-            plt.show()
-            
         self.twoDmaxRes.calcAvg()
         self.twoDr2.calcAvg()
-		
+        
+        if not plot is None and plot == True: 
+            self.plot2Dresiduals()
+        
     def get2DresIntervals(self, thres):
         return (100 * (self.twoDmaxRes.values < thres).sum() /
                 self.twoDmaxRes.values.count()
