@@ -1,2 +1,2 @@
-from .multipeak import printmd, Dataset, MultiPseudoVoigtModel, MultiPeakModelResults
+from .multipeak import printmd, Dataset, MultiPseudoVoigtModel
 from .grapheneRaman import GrapheneModelResults

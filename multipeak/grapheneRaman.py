@@ -252,7 +252,7 @@ class GrapheneModelResults(MultiPeakModelResults):
         printmd('#### Example spectrum number: ' + str(resultNumber))
         plt.show()
     
-    def plotAvgFit(self):
+    def plotAvgFit(self, saveName=None):
         if self.datasetsNumber < 1:
             return
         
@@ -273,7 +273,48 @@ class GrapheneModelResults(MultiPeakModelResults):
         ax2.set_xlim([2560, 2820])
         ax1.set_xlabel(makePlotLabel(self.task, 'x'))
         ax2.set_xlabel(makePlotLabel(self.task, 'x'))
+        
+        plt.text(0.05, 0.95, 'D/G: \n' + self.derivedResults['DtoG_area'].getStr(decimalPlaces=2), fontsize=14, ha='left', va='center', transform=ax1.transAxes)
+        plt.text(0.05, 0.95, '2D/G: \n' + self.derivedResults['twoDtoG_area'].getStr(decimalPlaces=2), fontsize=14, ha='left', va='center', transform=ax2.transAxes)
+        
+        if not saveName is None:
+            plt.savefig(self.baseFilename + saveName + '.png', dpi=300)
+            
+        plt.show()
+        
+        
+    def plot3D(self, fromX=None, toX=None, save=None):
+        
+        if len(self.fitResults) > 150:
+            return
+        
+        if not fromX is None:
+            fromX = self.task['xmin']
+            toX = self.task['xmax']
 
+        fig3D = plt.figure()
+        ax = fig3D.add_subplot(111, projection='3d')
+        
+        
+        for resultNumber, modResult in enumerate(self.fitResults):
+            ax.plot(xs=self.x[resultNumber, :], ys=self.fitResults[resultNumber].best_fit, zs=resultNumber, zdir='y')
+        
+        if not fromX is None:
+            ax.set_xlim([fromX, toX])
+            
+        ax.set_ylim([0, resultNumber])
+        ax.set_zlim([0,  np.max(self.avgY)+ 2 * np.std(self.avgY)])
+        ax.view_init(azim=250)
+        ax.set_xlabel('\n\n' + makePlotLabel(self.task, 'x'))
+        ax.set_zlabel('\n\n' + makePlotLabel(self.task, 'y'))
+        ax.yaxis.set_ticklabels([])
+        
+        ax.text2D(0.3, 0.95, ('D/G: ' + self.derivedResults['DtoG_area'].getStr(decimalPlaces=2)), fontsize=14, ha='center', va='center', transform=ax.transAxes)
+        ax.text2D(0.7, 0.99, ('2D/G: ' + self.derivedResults['twoDtoG_area'].getStr(decimalPlaces=2)), fontsize=14, ha='center', va='center', transform=ax.transAxes)
+        
+        if not save is None and save == True:
+            plt.savefig(self.baseFilename + '_3Dplot_fittedData.png', dpi=300)
+        
         plt.show()
 
     def plot2D(self, resultNumber, save=None):

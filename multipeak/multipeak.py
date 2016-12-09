@@ -590,8 +590,12 @@ class FitResultParameter:
     def calcAvg(self):
         self._avg = np.ma.average(self._values)
         self._dev = np.ma.std(self._values)
-    def getStr(self):
-        return '%.3f +/- %.3f' % (self._avg, self._dev)
+    def getStr(self, decimalPlaces=None):
+        if decimalPlaces is None:
+            decimalPlaces = 3
+        return (('%.' + str(decimalPlaces) + 'f +/- %.'
+            + str(decimalPlaces) + 'f') % (self._avg, self._dev)
+        )
     def setMask(self, lower, upper):
         self.values = np.ma.masked_outside(self._values, lower, upper)
         #self.values.fill_value = np.nan
@@ -711,18 +715,17 @@ class MultiPeakModelResults:
             ax.plot(xs=self.x[resultNumber, :], ys=self.fitResults[resultNumber].best_fit, zs=resultNumber, zdir='y')
         
         if not fromX is None:
-            ax.set_xlim([1250, 2850])
+            ax.set_xlim([fromX, toX])
             
         ax.set_ylim([0, resultNumber])
         ax.set_zlim([0,  np.max(self.avgY)+ 2 * np.std(self.avgY)])
         ax.view_init(azim=250)
-        ax.xaxis._axinfo['label']['space_factor'] = 6.8
-        ax.zaxis._axinfo['label']['space_factor'] = 6.8
-        ax.set_xlabel(makePlotLabel(self.task, 'x'))
-        ax.set_zlabel(makePlotLabel(self.task, 'y'))
+        ax.set_xlabel('\n\n' + makePlotLabel(self.task, 'x'))
+        ax.set_zlabel('\n\n' + makePlotLabel(self.task, 'y'))
+        ax.yaxis.set_ticklabels([])
         
         if not save is None and save == True:
-            plt.savefig('3Dplot_fittedData.png')
+            plt.savefig(self.baseFilename + '_3Dplot_fittedData.png', dpi=300)
             
         plt.show()
 
@@ -804,26 +807,4 @@ class MultiPeakModelResults:
     def printDerivedResultsTable(self, derivedParams=None):
         display(HTML(self.getDerivedResultsHTML(derivedParams=derivedParams)))
         
-    def plotAvgFit(self):
-        if self.datasetsNumber < 1:
-            return
-        
-        f, (ax1, ax2) = plt.subplots(1, 2, sharey=True)
-        
-        ax1.plot(self.x[0, :], self.avgFitResult.best_fit, 'r-')
-        ax1.plot(self.x[0, :], self.avgY, 'ko', markersize=2)
-        start, end = ax1.get_xlim()
-        ax1.xaxis.set_ticks(np.arange(start, end, 100.0))
-        
-        ax2.plot(self.x[0, :], self.avgFitResult.best_fit, 'r-')
-        ax2.plot(self.x[0, :], self.avgY, 'ko', markersize=2)
-        start, end = ax2.get_xlim()
-        ax2.xaxis.set_ticks(np.arange(start, end, 100.0))
-        
-        ax1.set_ylabel(makePlotLabel(self.task, 'y'))
-        ax1.set_xlim([1250, 1650])
-        ax2.set_xlim([2550, 2820])
-        ax1.set_xlabel(makePlotLabel(self.task, 'x'))
-        ax2.set_xlabel(makePlotLabel(self.task, 'x'))
-
-        plt.show()
+    
