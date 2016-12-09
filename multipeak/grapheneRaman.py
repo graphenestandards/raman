@@ -1,5 +1,13 @@
 from . import *
 
+import numpy as np
+
+from .multipeak import makePlotLabel, FitResultParameter, MultiPeakModelResults
+
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib.pyplot import savefig
+
 class GrapheneModelResults(MultiPeakModelResults):
     def __init__(self, fittedModel, dataset):
         super(GrapheneModelResults, self).__init__(fittedModel, dataset)
@@ -209,8 +217,8 @@ class GrapheneModelResults(MultiPeakModelResults):
             return
         plt.plot(self.x[resultNumber, :], self.fitResults[resultNumber].best_fit, 'r-')
         plt.plot(self.x[resultNumber, :], self.y[resultNumber, :])
-        plt.xlabel(self.task.get('xlabel'))
-        plt.ylabel(self.task.get('ylabel'))
+        plt.xlabel(makePlotLabel(self.task, 'x'))
+        plt.ylabel(makePlotLabel(self.task, 'y'))
 
     def plotDG(self, resultNumber):
         if self.datasetsNumber < resultNumber:
@@ -235,11 +243,11 @@ class GrapheneModelResults(MultiPeakModelResults):
         start, end = ax2.get_xlim()
         ax2.xaxis.set_ticks(np.arange(start, end, 100.0))
         
-        ax1.set_ylabel(self.task.get('ylabel'))
+        ax1.set_ylabel(makePlotLabel(self.task, 'y'))
         ax1.set_xlim([1250, 1650])
-        ax2.set_xlim([2550, 2820])
-        ax1.set_xlabel(self.task.get('xlabel'))
-        ax2.set_xlabel(self.task.get('xlabel'))
+        ax2.set_xlim([2560, 2820])
+        ax1.set_xlabel(makePlotLabel(self.task, 'x'))
+        ax2.set_xlabel(makePlotLabel(self.task, 'x'))
 
         printmd('#### Example spectrum number: ' + str(resultNumber))
         plt.show()
@@ -260,11 +268,11 @@ class GrapheneModelResults(MultiPeakModelResults):
         start, end = ax2.get_xlim()
         ax2.xaxis.set_ticks(np.arange(start, end, 100.0))
         
-        ax1.set_ylabel(self.task.get('ylabel'))
+        ax1.set_ylabel(makePlotLabel(self.task, 'y'))
         ax1.set_xlim([1250, 1650])
-        ax2.set_xlim([2550, 2820])
-        ax1.set_xlabel(self.task.get('xlabel'))
-        ax2.set_xlabel(self.task.get('xlabel'))
+        ax2.set_xlim([2560, 2820])
+        ax1.set_xlabel(makePlotLabel(self.task, 'x'))
+        ax2.set_xlabel(makePlotLabel(self.task, 'x'))
 
         plt.show()
 
@@ -274,7 +282,7 @@ class GrapheneModelResults(MultiPeakModelResults):
              'NSR: ' + str('{0:.2f}'.format(self.twoDmaxRes.values[resultNumber]))
         )
         
-        plt.xlim(2550, 2800)
+        plt.xlim(2560, 2800)
         
         if not save is None and save == True:
             plt.savefig('2DpeakRes' + str(resultNumber) + '.png')
@@ -437,9 +445,9 @@ class GrapheneModelResults(MultiPeakModelResults):
                     outlier.plot(self.x[index, :], self.fitResults[index].best_fit, 'r-', linewidth=2.0)
                     outlier.plot(self.x[index, :], self.y[index, :], linewidth=2.0)
                     if i >=  outlierNumber - 1:   
-                        outlier.set_xlabel(self.task.get('xlabel'))
+                        outlier.set_xlabel(makePlotLabel(self.task, 'x'))
                     if col == 1:
-                        outlier.set_ylabel(self.task.get('ylabel'))
+                        outlier.set_ylabel(makePlotLabel(self.task, 'y'))
                     #plt.tick_params(
                     #    axis='y',
                     #    which='both',
@@ -451,7 +459,7 @@ class GrapheneModelResults(MultiPeakModelResults):
                         'Spec. ' + str(index) +
                         ', R2: %.3f' % self.twoDr2.values[index]
                     )
-                    outlier.set_xlim(2550, 2800)
+                    outlier.set_xlim(2560, 2800)
 
         
         makeSubPlot(self.twoDr2.outliersMin, 1)
@@ -479,9 +487,9 @@ class GrapheneModelResults(MultiPeakModelResults):
                     outlier.plot(self.x[index, :], self.fitResults[index].best_fit, 'r-')
                     outlier.plot(self.x[index, :], self.y[index, :])
                     if i >=  outlierNumber - 1:   
-                        outlier.set_xlabel(self.task.get('xlabel'))
+                        outlier.set_xlabel(makePlotLabel(self.task, 'x'))
                     if col == 1:
-                        outlier.set_ylabel(self.task.get('ylabel'))
+                        outlier.set_ylabel(makePlotLabel(self.task, 'y'))
                     #plt.tick_params(
                     #    axis='y',
                     #    which='both',

@@ -1,5 +1,43 @@
 from . import *
+
+import numpy as np
+from lmfit.models import PolynomialModel, PseudoVoigtModel
+from lmfit.model import ModelResult
+from lmfit import Parameters, report_fit
+
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib.pyplot import savefig
+
+import tkinter as tk
+from tkinter import filedialog
+
+import csv
+
+import time
+
+from IPython.display import HTML, display, Markdown
+#we want to use markdown in the output of cells
+def printmd(string):
+    display(Markdown(string))
+
     
+def makePlotLabel(task, axis):
+    """Build a pyplot label
+        
+    Cuts the dataset to the range specified in the task.
+    If necessary, brings the data in ascending-x order
+    Args:
+        task (dict): contains xlabel, xunit, ylabel, yunit
+        axis (String): 'x' or 'y'
+    Returns:
+        String: plot label string
+    """
+    return (
+        r'' + task.get(axis + 'label') + ' ($\mathregular{\mathsf{' + 
+        task.get(axis + 'unit') + '}}$)'
+    )
+
 class Dataset: 
     def __init__(self, task=None, maxNumber=None):
         """A multi-peak, multi-spectra dataset, loaded from a text file.
@@ -28,7 +66,7 @@ class Dataset:
             initialDir = './'
         filename = filedialog.askopenfilename(
             initialdir=initialDir,
-            filetypes=[('Raman text files', '*.txt')]
+            filetypes=[('Data text files', '*.txt')]
         )
         
         root = tk.Tk()
@@ -238,6 +276,7 @@ class Dataset:
             except Exception as err:
                 print(err)
                 snrFilter[i] = False
+                
             self.weights['included'] = np.logical_and(self.weights['included'], snrFilter)
 
         #plot output only if exampleSpec is set
@@ -255,10 +294,10 @@ class Dataset:
 
             exampleBaseline.plot(cutDatasetX[exampleSpec, :], cutDatasetY[exampleSpec, :], 'r--')
             exampleBaseline.plot(cutDatasetX[exampleSpec, :], exampleBaselineData)
-            exampleBaseline.set_ylabel(self.task.get('ylabel'))
+            exampleBaseline.set_ylabel(makePlotLabel(self.task, 'y'))
 
             exampleResidual.plot(cutDatasetX[exampleSpec, :], exampleResiduals)
-            exampleResidual.set_ylabel(self.task.get('ylabel'))
+            exampleResidual.set_ylabel(makePlotLabel(self.task, 'y'))
 
 
             includedNumber = np.sum(snrFilter)
@@ -295,9 +334,9 @@ class Dataset:
                 for ind in exclInclInds[atSnr:firstIncludedSpec]:
                     exampleIncluded.plot(self.datasetX[ind,mask,...], self.datasetY[ind,mask,...])
 
-                exampleExcluded.set_ylabel(self.task.get('ylabel'))
-                exampleIncluded.set_xlabel(self.task.get('xlabel'))
-                exampleIncluded.set_ylabel(self.task.get('ylabel'))
+                exampleExcluded.set_ylabel(makePlotLabel(self.task, 'y'))
+                exampleIncluded.set_xlabel(makePlotLabel(self.task, 'x'))
+                exampleIncluded.set_ylabel(makePlotLabel(self.task, 'y'))
 
                 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
                 plt.show()
@@ -378,8 +417,8 @@ class Dataset:
         
         plt.title('Example baseline corrected spectrum Nr. %d' % exampleSpec)
         plt.plot(self.datasetX[exampleSpec, :], self.datasetY[exampleSpec, :])
-        plt.xlabel(self.task.get('xlabel'))
-        plt.ylabel(self.task.get('ylabel'))
+        plt.xlabel(makePlotLabel(self.task, 'x'))
+        plt.ylabel(makePlotLabel(self.task, 'y'))
         plt.show()
 
         
@@ -679,8 +718,8 @@ class MultiPeakModelResults:
         ax.view_init(azim=250)
         ax.xaxis._axinfo['label']['space_factor'] = 6.8
         ax.zaxis._axinfo['label']['space_factor'] = 6.8
-        ax.set_xlabel(self.task.get('xlabel'))
-        ax.set_zlabel(self.task.get('ylabel'))
+        ax.set_xlabel(makePlotLabel(self.task, 'x'))
+        ax.set_zlabel(makePlotLabel(self.task, 'y'))
         
         if not save is None and save == True:
             plt.savefig('3Dplot_fittedData.png')
@@ -781,10 +820,10 @@ class MultiPeakModelResults:
         start, end = ax2.get_xlim()
         ax2.xaxis.set_ticks(np.arange(start, end, 100.0))
         
-        ax1.set_ylabel(self.task.get('ylabel'))
+        ax1.set_ylabel(makePlotLabel(self.task, 'y'))
         ax1.set_xlim([1250, 1650])
         ax2.set_xlim([2550, 2820])
-        ax1.set_xlabel(self.task.get('xlabel'))
-        ax2.set_xlabel(self.task.get('xlabel'))
+        ax1.set_xlabel(makePlotLabel(self.task, 'x'))
+        ax2.set_xlabel(makePlotLabel(self.task, 'x'))
 
         plt.show()
