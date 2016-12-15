@@ -566,6 +566,8 @@ class FitResultParameter:
         self.outliersMin = np.ones_like(fitResults, dtype=int)
         self.outliersMax = np.ones_like(fitResults, dtype=int)
         self.calcAvg()
+        if not description is None:
+            self._description = description
     @property
     def avg(self):
         return self._avg
@@ -629,10 +631,15 @@ class MultiPeakFitResults:
                     fitParamResults[resultNo] = modResult.params.get(peakParamName)
                         
                 self.peakResults[peakNo][paramNo] = FitResultParameter(
-                    fitParamResults, paramName=peakParamName)
+                    fitParamResults, paramName=peakParamName, description=peakParamName)
         
     def getReferenceByName(self, peakParamName):
-        return self.peakResults[self.peakParamNames[peakParamName]]
+        peakResultsIndex = self.peakParamNames.get(peakParamName)
+        
+        if peakResultsIndex is None:
+            return None
+        else:
+            return self.peakResults[peakResultsIndex]
     
     def getHTML(self):
         return ('<div>Results per peak from ' + str(len(self.fitResults)) + ' datasets:</div>' +
@@ -807,4 +814,44 @@ class MultiPeakModelResults:
     def printDerivedResultsTable(self, derivedParams=None):
         display(HTML(self.getDerivedResultsHTML(derivedParams=derivedParams)))
         
+    def printAvgRes(self, resultNames, delimiter=None):
+        if self.datasetsNumber < 1:
+            return
+        
+        if delimiter is None:
+            delimiter = ' '
+            
+        format = '<b>Format: </b>'
+        out = ''
+        
+        for resultName in resultNames:
+            result = self.peakResults.getReferenceByName(resultName)
+            if result is None:
+                result = self.derivedResults.get(resultName)
+            if not result is None:
+                out += str(result.avg) + delimiter
+                out += str(result.dev) + delimiter
+                format += ' <b>|</b> ' + str(result.description) + ' ' + '+/- '
+        
+        format.strip()
+        out.strip()
+        
+        if len(out) > 1:
+            hr = '<div style="width: 100%; height: 3px; background: grey; overflow: hidden;">'
+            printmd(format)
+            printmd(hr)
+            print(out)
+            printmd(hr)
+        else:
+            print('No result found.')
+            
+        options = ''
+        for possibleName in self.peakResults.peakParamNames:
+            options += possibleName + ' | '
+        for possibleName in self.derivedResults:
+            options += possibleName + ' | '
+        
+        print('')
+        print('Possible names are:')
+        print(options)
     

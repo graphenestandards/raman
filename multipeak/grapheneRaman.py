@@ -140,33 +140,7 @@ class GrapheneModelResults(MultiPeakModelResults):
         header += delimiter + str(self.task)
         filename = self.baseFilename + '_' + filenameAd + '.csv'
         np.savetxt(filename, out, delimiter=delimiter, header=header)
-        print('Results for each sprectrum saved as: ', filename)    
-        
-    def printAvgRes(self):
-        if self.datasetsNumber < 1:
-            return
-        out = str(self.DtoG_area.avg)
-        out += ' ' + str(self.DtoG_area.dev)
-        
-        out += ' ' + str(self.twoDr2.avg)
-        out += ' ' + str(self.twoDr2.dev)
-        
-        out += ' ' + str(self.twoDtoG_area.avg)
-        out += ' ' + str(self.twoDtoG_area.dev)
-        
-        out += ' ' + str(self.widthG.avg)
-        out += ' ' + str(self.widthG.dev)
-        
-        out += ' ' + str(self.widthtwoD.avg)
-        out += ' ' + str(self.widthtwoD.dev)
-        
-        out += ' ' + str(self.areaG.avg)
-        out += ' ' + str(self.areaG.dev)
-        
-        out += ' ' + str(self.twoDtoG_height.avg)
-        out += ' ' + str(self.twoDtoG_height.dev)
-        
-        print(out)    
+        print('Results for each sprectrum saved as: ', filename) 
         
   
     def printDtoG(self):
